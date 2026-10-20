@@ -154,7 +154,12 @@ const GeneSearchTourCmp = (props) => {
       textColor: '#333',
       zIndex: TOUR_Z_INDEX,
       showProgress: true,
-      buttons: ['back', 'primary', 'skip', 'close'],
+      // No Skip link: the close box and Esc both end the tour.
+      buttons: ['back', 'primary', 'close'],
+      closeButtonAction: 'skip',
+      // Joyride's Esc can only close a step (which advances the tour), and only
+      // while a tooltip is up; the listener below exits instead, at any point.
+      dismissKeyAction: false,
       spotlightPadding: 6,
       spotlightRadius: 4,
       // Open each step's tooltip straight away. Without this Joyride shows a
@@ -172,8 +177,20 @@ const GeneSearchTourCmp = (props) => {
       beforeTimeout: 45000,
       overlayColor: 'rgba(0, 0, 0, 0.45)'
     },
-    locale: { back: 'Back', close: 'Close', last: 'Done', next: 'Next', skip: 'Skip tour' }
+    // `close` is the close box's aria-label and title (its tooltip).
+    locale: { back: 'Back', close: 'Exit tour', last: 'Done', next: 'Next', skip: 'Exit tour' }
   })
+
+  // Esc exits the tour, the same as the close box — including while a step's
+  // `before` hook is still setting up, when Joyride shows only its loader.
+  useEffect(() => {
+    if (!running) return undefined
+    const onKey = (e) => {
+      if (e.key === 'Escape') setRunning(false)
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [running])
 
   /**
    * Start the tour, optionally from a later chapter.
