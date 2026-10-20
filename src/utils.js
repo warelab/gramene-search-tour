@@ -101,12 +101,20 @@ export function scrollIntoPane(target, { block = 'center', margin = 16 } = {}) {
         ? offset - Math.max(0, (pane.clientHeight - elRect.height) / 2)
         : offset - margin
     const top = Math.max(0, Math.min(raw, pane.scrollHeight - pane.clientHeight))
+    // A pinned pane (the sidebar, when it overflows) has the same problem as
+    // a pinned target in the window branch below.
+    if (isPinned(pane) && window.scrollY > 0) window.scrollTo({ top: 0 })
     pane.scrollTo({ top, behavior: 'smooth' })
     return { pane, top }
   }
-  // A pinned target (Gramene's sticky sidebar) is already on screen; scrolling
-  // the window toward it only slides its top under the sticky navbar.
-  if (isPinned(el)) return null
+  // A pinned target (Gramene's sticky sidebar) never comes closer by scrolling
+  // toward it. Once the window has scrolled, the sidebar sticks with its top
+  // under the sticky navbar and the spotlight lands off the element, so take
+  // the window back to the top, where the sidebar sits in its natural place.
+  if (isPinned(el)) {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+    return { pane: null, top: 0 }
+  }
   const header = pinnedHeaderHeight()
   const top =
     block === 'center'
