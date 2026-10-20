@@ -1,0 +1,41 @@
+{
+  "name": "gramene-search-tour",
+  "version": "0.1.0",
+  "description": "Guided-tour engine and shared steps for gramene-search gene search sites (react-joyride v3)",
+  "main": "dist/index.cjs",
+  "module": "dist/index.mjs",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    },
+    "./tour.css": "./dist/tour.css",
+    "./dist/tour.css": "./dist/tour.css"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "sideEffects": [
+    "*.css"
+  ],
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "prepack": "npm run build"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18",
+    "react-joyride": "^3.2.0",
+    "redux-bundler-react": "^1.2.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/warelab/gramene-search-tour.git"
+  },
+  "author": "Andrew Olson",
+  "license": "ISC"
+}
