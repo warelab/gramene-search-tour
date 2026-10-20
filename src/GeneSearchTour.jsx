@@ -92,6 +92,33 @@ export const TourContents = ({
 // Joyride gets the step without our own bookkeeping fields.
 const toJoyrideStep = ({ chapter, ...step }) => step
 
+/** Open filter menus in a gramene-search filter tree (nodes with showMenu). */
+function openMenus(node, out = []) {
+  if (!node) return out
+  if (node.showMenu) out.push(node)
+  ;(node.children || []).forEach((c) => openMenus(c, out))
+  return out
+}
+
+/**
+ * Undo the scaffolding a tour leaves when the visitor exits partway: the
+ * suggestions it typed and any filter menu it opened (the expand-search steps
+ * leave one open). The search itself, and its results, stay. Sites add their
+ * own (e.g. SorghumBase's navbar search overlay) through `onExit`.
+ */
+function cleanUpAfterExit(props) {
+  const { store, onExit } = props
+  if (store) {
+    if (typeof store.doClearSuggestions === 'function') store.doClearSuggestions()
+    if (typeof store.doToggleGrameneFilterMenu === 'function') {
+      // Nested menus close root-first just as well; each toggle only flips its node.
+      openMenus(store.selectGrameneFilters && store.selectGrameneFilters())
+        .forEach((node) => store.doToggleGrameneFilterMenu(node))
+    }
+  }
+  if (typeof onExit === 'function') onExit()
+}
+
 const GeneSearchTourCmp = (props) => {
   const {
     buildSteps,
@@ -100,6 +127,8 @@ const GeneSearchTourCmp = (props) => {
     tocIntro,
     helpViewToc = true,
     debug = false
+    // onExit: optional () => void, run after the built-in cleanup when the
+    // visitor exits partway (close box or Esc); not on finishing.
   } = props
 
   // Steps read state through this ref, never through the props captured when the
@@ -113,10 +142,16 @@ const GeneSearchTourCmp = (props) => {
   const [running, setRunning] = useState(false)
   const [helpMount, setHelpMount] = useState(null)
 
+  // Stop the tour; `exited` when the visitor left partway rather than finished.
+  const stop = useCallback((exited) => {
+    setRunning(false)
+    if (exited) cleanUpAfterExit(propsRef.current)
+  }, [])
+
   const handleEvent = useCallback((data) => {
     const { type, status, action, index } = data
     if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
-      setRunning(false)
+      stop(status === STATUS.SKIPPED)
       return
     }
     // Controlled mode: we own the index, so advance it ourselves once a step is
@@ -136,7 +171,7 @@ const GeneSearchTourCmp = (props) => {
     ) {
       setStepIndex(index + (action === ACTIONS.PREV ? -1 : 1))
     }
-  }, [])
+  }, [stop])
 
   const { Tour } = useJoyride({
     steps,
@@ -186,11 +221,11 @@ const GeneSearchTourCmp = (props) => {
   useEffect(() => {
     if (!running) return undefined
     const onKey = (e) => {
-      if (e.key === 'Escape') setRunning(false)
+      if (e.key === 'Escape') stop(true)
     }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
-  }, [running])
+  }, [running, stop])
 
   /**
    * Start the tour, optionally from a later chapter.
