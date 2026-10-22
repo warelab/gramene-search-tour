@@ -16,7 +16,7 @@
 // {title, blurb}` field, from which the table of contents is derived. The tour
 // is offered from the contents list in the Help / Demo view (rendered there
 // through a portal), by any <TourContents/> the site renders itself, by
-// startTour(), or by loading the page with ?tour=1.
+// startTour(), or by loading the page with ?tour=1 (?tour=N opens at step N).
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
@@ -256,14 +256,18 @@ const GeneSearchTourCmp = (props) => {
     return () => window.removeEventListener(START_EVENT, onStart)
   }, [start])
 
-  // Autostart from ?tour=1 and strip the param so a reload doesn't replay it.
+  // Autostart from ?tour=N — N is the 1-based step to open at, so ?tour=1 is
+  // the beginning and a contents list on another page can link to a chapter
+  // (chapter index + 1). Strip the param so a reload doesn't replay it.
   useEffect(() => {
     if (typeof window === 'undefined') return
     const url = new URL(window.location.href)
-    if (url.searchParams.get(TOUR_PARAM)) {
+    const value = url.searchParams.get(TOUR_PARAM)
+    if (value) {
       url.searchParams.delete(TOUR_PARAM)
       window.history.replaceState({}, '', url.toString())
-      start(0)
+      const n = parseInt(value, 10)
+      start(Number.isFinite(n) && n > 1 ? n - 1 : 0)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

@@ -24,7 +24,7 @@ There are four ways to start the tour:
 
 - the contents list that the engine portals into the Help / Demo view (turn it off with `helpViewToc={false}`)
 - any `<TourContents/>`, or a call to `startTour(stepIndex)`
-- loading the page with `?tour=1`
+- loading the page with `?tour=1`, or `?tour=N` to open at step N (a chapter's `index + 1`, so a contents list on another page can link straight to a chapter)
 
 Set `--gene-search-tour-accent` on `.gene-search-tour-toc` to color the contents list.
 Pass `debug` to log Joyride's lifecycle. Skipped steps are always logged with `console.warn`.
